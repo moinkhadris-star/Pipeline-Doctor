@@ -5,6 +5,9 @@
 MSc Software Engineering | UK
 Aspiring DevOps + AI Engineer
 
+# Description
+AI agent that diagnoses CI/CD pipeline failures
+
 ## 🛠️ Stack
 - Cloud: AWS (S3, EC2, CloudFront, IAM)
 - DevOps: Docker, GitHub Actions, CI/CD, Git
