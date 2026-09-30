@@ -18,8 +18,6 @@ AI agent that diagnoses CI/CD pipeline failures
 Pipeline Doctor - AI agent that diagnoses 
 CI/CD pipeline failures automatically
 
-## 🎯 Goal
-DevOps Internship | January 2027 | UK
 
 ## 📫 Connect
 www.linkedin.com/in/moin-khadri-syed

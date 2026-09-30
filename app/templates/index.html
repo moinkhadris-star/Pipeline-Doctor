@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Doctor 🏥</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d0d1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: #111130;
+            border: 1px solid #ffffff10;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            color: #00d4ff;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: #0d0d1a;
+            border: 1px solid #ffffff20;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        input::placeholder { color: #555; }
+
+        button {
+            width: 100%;
+            padding: 0.9rem;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button:hover { opacity: 0.85; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result { display: none; }
+
+        .result.visible { display: block; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .status-failure { background: #ff4444; color: white; }
+        .status-success { background: #44ff88; color: black; }
+
+        .diagnosis-box {
+            background: #0d0d1a;
+            border-left: 3px solid #ff4444;
+            padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1rem;
+        }
+
+        .suggestion-box {
+            background: #0d0d1a;
+            border-left: 3px solid #44ff88;
+            padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1rem;
+        }
+
+        .box-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .box-content {
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .confidence {
+            text-align: right;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #00d4ff;
+        }
+
+        .loading.visible { display: block; }
+
+        .spinner {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error-box {
+            background: #ff444420;
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #ff4444;
+            display: none;
+        }
+
+        .error-box.visible { display: block; }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #555;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <h1>🏥 Pipeline Doctor</h1>
+            <p>AI agent that diagnoses your CI/CD pipeline failures</p>
+        </header>
+
+        <div class="card">
+            <h2>🔍 Diagnose Pipeline Failure</h2>
+
+            <input 
+                type="text" 
+                id="repoInput" 
+                placeholder="Enter repo (e.g. username/repo-name)"
+            />
+
+            <input 
+                type="number" 
+                id="runIdInput" 
+                placeholder="Run ID (optional - leave blank for latest failure)"
+            />
+
+            <button onclick="diagnose()" id="diagnoseBtn">
+                🤖 Diagnose Pipeline
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner">⚙️</div>
+            <p style="margin-top: 1rem">AI agent analysing your pipeline...</p>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+
+        <div class="card result" id="result">
+            <h2>📋 Diagnosis Report</h2>
+
+            <div id="statusBadge" class="status-badge"></div>
+
+            <div class="diagnosis-box">
+                <div class="box-label">🔴 What went wrong</div>
+                <div class="box-content" id="diagnosisText"></div>
+            </div>
+
+            <div class="suggestion-box">
+                <div class="box-label">✅ How to fix it</div>
+                <div class="box-content" id="suggestionText"></div>
+            </div>
+
+            <div class="confidence" id="confidenceText"></div>
+        </div>
+
+        <footer>
+            Built by Moin | Pipeline Doctor v1.0 | 
+            Powered by OpenAI + GitHub API
+        </footer>
+
+    </div>
+
+    <script>
+        async function diagnose() {
+            const repo = document.getElementById('repoInput').value.trim()
+            const runId = document.getElementById('runIdInput').value.trim()
+            const btn = document.getElementById('diagnoseBtn')
+
+            // Validate
+            if (!repo) {
+                showError('Please enter a repository name')
+                return
+            }
+
+            if (!repo.includes('/')) {
+                showError('Format must be: username/repo-name')
+                return
+            }
+
+            // Show loading
+            hideResult()
+            hideError()
+            showLoading()
+            btn.disabled = true
+
+            try {
+                const body = { repo_name: repo }
+                if (runId) body.run_id = parseInt(runId)
+
+                const response = await fetch('/diagnose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+
+                if (!response.ok) {
+                    const err = await response.json()
+                    throw new Error(err.detail || 'Something went wrong')
+                }
+
+                const data = await response.json()
+                showResult(data)
+
+            } catch (err) {
+                showError(err.message)
+            } finally {
+                hideLoading()
+                btn.disabled = false
+            }
+        }
+
+        function showResult(data) {
+            document.getElementById('diagnosisText').innerText = data.diagnosis
+            document.getElementById('suggestionText').innerText = data.suggestion
+            document.getElementById('confidenceText').innerText = 
+                `AI Confidence: ${data.confidence}`
+
+            const badge = document.getElementById('statusBadge')
+            badge.innerText = data.status.toUpperCase()
+            badge.className = 'status-badge ' + 
+                (data.status === 'failure' ? 'status-failure' : 'status-success')
+
+            document.getElementById('result').classList.add('visible')
+        }
+
+        function showError(msg) {
+            const box = document.getElementById('errorBox')
+            box.innerText = '❌ ' + msg
+            box.classList.add('visible')
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('visible')
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('visible')
+        }
+
+        function hideResult() {
+            document.getElementById('result').classList.remove('visible')
+        }
+
+        function hideError() {
+            document.getElementById('errorBox').classList.remove('visible')
+        }
+
+        // Allow Enter key to trigger diagnose
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') diagnose()
+        })
+    </script>
+</body>
+</html>
