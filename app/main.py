@@ -26,7 +26,7 @@ class DiagnoseResponse(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    with open("app/templates/index.html") as f:
+    with open("app/templates/index.html", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/health")
