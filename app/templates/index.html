@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Doctor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d0d1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: #111130;
+            border: 1px solid #ffffff10;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            color: #00d4ff;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: #0d0d1a;
+            border: 1px solid #ffffff20;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        input::placeholder { color: #555; }
+
+        button {
+            width: 100%;
+            padding: 0.9rem;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button:hover { opacity: 0.85; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result { display: none; }
+        .result.visible { display: block; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .status-failure { background: #ff4444; color: white; }
+        .status-success { background: #44ff88; color: black; }
+
+        /* NEW: Pipeline meta info box */
+        .meta-box {
+            background: #0d0d1a;
+            border: 1px solid #ffffff10;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .meta-item {
+            font-size: 0.85rem;
+        }
+
+        .meta-label {
+            color: #888;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .meta-value {
+            color: #00d4ff;
+        }
+
+        .meta-link {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .meta-link:hover {
+            text-decoration: underline;
+        }
+
+        .diagnosis-box {
+            background: #0d0d1a;
+            border-left: 3px solid #ff4444;
+            padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1rem;
+        }
+
+        .suggestion-box {
+            background: #0d0d1a;
+            border-left: 3px solid #44ff88;
+            padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1rem;
+        }
+
+        .box-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .box-content {
+            color: #e0e0e0;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .confidence {
+            text-align: right;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #00d4ff;
+        }
+
+        .loading.visible { display: block; }
+
+        .spinner {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error-box {
+            background: #ff444420;
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #ff4444;
+            display: none;
+            margin-bottom: 1rem;
+        }
+
+        .error-box.visible { display: block; }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #555;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <h1>Pipeline Doctor</h1>
+            <p>AI agent that diagnoses your CI/CD pipeline failures</p>
+        </header>
+
+        <div class="card">
+            <h2>Diagnose Pipeline Failure</h2>
+
+            <input 
+                type="text" 
+                id="repoInput" 
+                placeholder="Enter repo (e.g. username/repo-name)"
+            />
+
+            <input 
+                type="number" 
+                id="runIdInput" 
+                placeholder="Run ID (optional - leave blank for latest failure)"
+            />
+
+            <button onclick="diagnose()" id="diagnoseBtn">
+                Diagnose Pipeline
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner">*</div>
+            <p style="margin-top: 1rem">AI agent analysing your pipeline...</p>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+
+        <div class="card result" id="result">
+            <h2>Diagnosis Report</h2>
+
+            <!-- Status Badge -->
+            <div id="statusBadge" class="status-badge"></div>
+
+            <!-- NEW: Pipeline Meta Information -->
+            <div class="meta-box">
+                <div class="meta-item">
+                    <div class="meta-label">Pipeline Name</div>
+                    <div class="meta-value" id="pipelineName">-</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Branch</div>
+                    <div class="meta-value" id="branchName">-</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Failed At</div>
+                    <div class="meta-value" id="failedAt">-</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">View on GitHub</div>
+                    <a id="pipelineUrl" href="#" target="_blank" 
+                       class="meta-link">Open Pipeline</a>
+                </div>
+            </div>
+
+            <!-- What went wrong -->
+            <div class="diagnosis-box">
+                <div class="box-label">What went wrong</div>
+                <div class="box-content" id="diagnosisText"></div>
+            </div>
+
+            <!-- How to fix it -->
+            <div class="suggestion-box">
+                <div class="box-label">How to fix it</div>
+                <div class="box-content" id="suggestionText"></div>
+            </div>
+
+            <!-- Confidence -->
+            <div class="confidence" id="confidenceText"></div>
+        </div>
+
+        <footer>
+            Built by Moin | Pipeline Doctor v1.0 | 
+            Powered by Gemini AI + GitHub API
+        </footer>
+
+    </div>
+
+    <script>
+        async function diagnose() {
+            const repo = document.getElementById('repoInput').value.trim()
+            const runId = document.getElementById('runIdInput').value.trim()
+            const btn = document.getElementById('diagnoseBtn')
+
+            // Validate
+            if (!repo) {
+                showError('Please enter a repository name')
+                return
+            }
+
+            if (!repo.includes('/')) {
+                showError('Format must be: username/repo-name')
+                return
+            }
+
+            // Show loading
+            hideResult()
+            hideError()
+            showLoading()
+            btn.disabled = true
+
+            try {
+                const body = { repo_name: repo }
+                if (runId) body.run_id = parseInt(runId)
+
+                const response = await fetch('/diagnose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+
+                if (!response.ok) {
+                    const err = await response.json()
+                    throw new Error(err.detail || 'Something went wrong')
+                }
+
+                const data = await response.json()
+                showResult(data)
+
+            } catch (err) {
+                showError(err.message)
+            } finally {
+                hideLoading()
+                btn.disabled = false
+            }
+        }
+
+        function showResult(data) {
+            // Status badge
+            const badge = document.getElementById('statusBadge')
+            badge.innerText = data.status.toUpperCase()
+            badge.className = 'status-badge ' + 
+                (data.status === 'failure' ? 'status-failure' : 'status-success')
+
+            // NEW: Pipeline meta info
+            document.getElementById('pipelineName').innerText = 
+                data.pipeline_name || 'Unknown'
+            
+            document.getElementById('branchName').innerText = 
+                data.branch || 'Unknown'
+            
+            document.getElementById('failedAt').innerText = 
+                data.failed_at ? new Date(data.failed_at).toLocaleString('en-GB') : 'Unknown'
+            
+            const urlEl = document.getElementById('pipelineUrl')
+            if (data.pipeline_url) {
+                urlEl.href = data.pipeline_url
+                urlEl.innerText = 'Open Pipeline'
+            } else {
+                urlEl.innerText = 'Not available'
+            }
+
+            // Diagnosis and suggestion
+            document.getElementById('diagnosisText').innerText = data.diagnosis
+            document.getElementById('suggestionText').innerText = data.suggestion
+            document.getElementById('confidenceText').innerText = 
+                'AI Confidence: ' + data.confidence
+
+            document.getElementById('result').classList.add('visible')
+        }
+
+        function showError(msg) {
+            const box = document.getElementById('errorBox')
+            box.innerText = 'Error: ' + msg
+            box.classList.add('visible')
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('visible')
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('visible')
+        }
+
+        function hideResult() {
+            document.getElementById('result').classList.remove('visible')
+        }
+
+        function hideError() {
+            document.getElementById('errorBox').classList.remove('visible')
+        }
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') diagnose()
+        })
+    </script>
+</body>
+</html>

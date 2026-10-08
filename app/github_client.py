@@ -12,25 +12,16 @@ class GitHubClient:
         self.client = Github(token)
     
     def get_latest_failed_run(self, repo_name: str):
-        """Get the most recent failed pipeline run"""
         try:
             repo = self.client.get_repo(repo_name)
-            
-            # Get all workflow runs
-            runs = repo.get_workflow_runs()
-            
-            # Find latest failed run
+            runs = repo.get_workflow_runs(status="failure")
             for run in runs:
-                if run.conclusion == "failure":
-                    return run
-            
+                return run  # Return first one immediately
             return None
-        
         except Exception as e:
             raise Exception(f"Could not fetch runs for {repo_name}: {str(e)}")
     
     def get_run_by_id(self, repo_name: str, run_id: int):
-        """Get a specific pipeline run by ID"""
         try:
             repo = self.client.get_repo(repo_name)
             return repo.get_workflow_run(run_id)
@@ -38,29 +29,18 @@ class GitHubClient:
             raise Exception(f"Could not fetch run {run_id}: {str(e)}")
     
     def get_run_logs_summary(self, run) -> dict:
-        """Extract useful info from a pipeline run"""
         try:
-            # Get failed jobs
-            jobs = run.jobs()
+            # Only fetch jobs ONCE and store it
+            jobs_list = list(run.jobs())
             failed_jobs = []
             
-            for job in jobs:
+            for job in jobs_list:
                 if job.conclusion == "failure":
-                    failed_steps = []
-                    
-                    for step in job.steps:
-                        if step.conclusion == "failure":
-                            failed_steps.append({
-                                "step_name": step.name,
-                                "number": step.number
-                            })
-                    
                     failed_jobs.append({
                         "job_name": job.name,
-                        "failed_steps": failed_steps,
                         "html_url": job.html_url
                     })
-            
+
             return {
                 "run_id": run.id,
                 "run_name": run.name,
@@ -71,14 +51,13 @@ class GitHubClient:
                 "created_at": str(run.created_at),
                 "html_url": run.html_url,
                 "failed_jobs": failed_jobs,
-                "total_jobs": run.jobs().totalCount
+                "total_jobs": len(jobs_list)
             }
         
         except Exception as e:
             raise Exception(f"Could not extract log summary: {str(e)}")
-    
+
     def test_connection(self):
-        """Test GitHub API connection works"""
         try:
             user = self.client.get_user()
             return f"Connected as: {user.login}"

@@ -20,13 +20,17 @@ class DiagnoseRequest(BaseModel):
 class DiagnoseResponse(BaseModel):
     repo: str
     status: str
+    pipeline_name: str = ""
+    branch: str = ""
+    failed_at: str = ""
+    pipeline_url: str = ""
     diagnosis: str
     suggestion: str
     confidence: str
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    with open("app/templates/index.html") as f:
+    with open("app/templates/index.html", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/health")
