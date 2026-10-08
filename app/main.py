@@ -20,6 +20,10 @@ class DiagnoseRequest(BaseModel):
 class DiagnoseResponse(BaseModel):
     repo: str
     status: str
+    pipeline_name: str = ""
+    branch: str = ""
+    failed_at: str = ""
+    pipeline_url: str = ""
     diagnosis: str
     suggestion: str
     confidence: str

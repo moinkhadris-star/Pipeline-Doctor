@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pipeline Doctor 🏥</title>
+    <title>Pipeline Doctor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -85,7 +85,6 @@
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .result { display: none; }
-
         .result.visible { display: block; }
 
         .status-badge {
@@ -99,6 +98,44 @@
 
         .status-failure { background: #ff4444; color: white; }
         .status-success { background: #44ff88; color: black; }
+
+        /* NEW: Pipeline meta info box */
+        .meta-box {
+            background: #0d0d1a;
+            border: 1px solid #ffffff10;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .meta-item {
+            font-size: 0.85rem;
+        }
+
+        .meta-label {
+            color: #888;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .meta-value {
+            color: #00d4ff;
+        }
+
+        .meta-link {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .meta-link:hover {
+            text-decoration: underline;
+        }
 
         .diagnosis-box {
             background: #0d0d1a;
@@ -127,6 +164,7 @@
         .box-content {
             color: #e0e0e0;
             line-height: 1.6;
+            white-space: pre-line;
         }
 
         .confidence {
@@ -162,6 +200,7 @@
             padding: 1rem;
             color: #ff4444;
             display: none;
+            margin-bottom: 1rem;
         }
 
         .error-box.visible { display: block; }
@@ -178,12 +217,12 @@
     <div class="container">
 
         <header>
-            <h1>🏥 Pipeline Doctor</h1>
+            <h1>Pipeline Doctor</h1>
             <p>AI agent that diagnoses your CI/CD pipeline failures</p>
         </header>
 
         <div class="card">
-            <h2>🔍 Diagnose Pipeline Failure</h2>
+            <h2>Diagnose Pipeline Failure</h2>
 
             <input 
                 type="text" 
@@ -198,38 +237,63 @@
             />
 
             <button onclick="diagnose()" id="diagnoseBtn">
-                🤖 Diagnose Pipeline
+                Diagnose Pipeline
             </button>
         </div>
 
         <div class="loading" id="loading">
-            <div class="spinner">⚙️</div>
+            <div class="spinner">*</div>
             <p style="margin-top: 1rem">AI agent analysing your pipeline...</p>
         </div>
 
         <div class="error-box" id="errorBox"></div>
 
         <div class="card result" id="result">
-            <h2>📋 Diagnosis Report</h2>
+            <h2>Diagnosis Report</h2>
 
+            <!-- Status Badge -->
             <div id="statusBadge" class="status-badge"></div>
 
+            <!-- NEW: Pipeline Meta Information -->
+            <div class="meta-box">
+                <div class="meta-item">
+                    <div class="meta-label">Pipeline Name</div>
+                    <div class="meta-value" id="pipelineName">-</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Branch</div>
+                    <div class="meta-value" id="branchName">-</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Failed At</div>
+                    <div class="meta-value" id="failedAt">-</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">View on GitHub</div>
+                    <a id="pipelineUrl" href="#" target="_blank" 
+                       class="meta-link">Open Pipeline</a>
+                </div>
+            </div>
+
+            <!-- What went wrong -->
             <div class="diagnosis-box">
-                <div class="box-label">🔴 What went wrong</div>
+                <div class="box-label">What went wrong</div>
                 <div class="box-content" id="diagnosisText"></div>
             </div>
 
+            <!-- How to fix it -->
             <div class="suggestion-box">
-                <div class="box-label">✅ How to fix it</div>
+                <div class="box-label">How to fix it</div>
                 <div class="box-content" id="suggestionText"></div>
             </div>
 
+            <!-- Confidence -->
             <div class="confidence" id="confidenceText"></div>
         </div>
 
         <footer>
             Built by Moin | Pipeline Doctor v1.0 | 
-            Powered by OpenAI + GitHub API
+            Powered by Gemini AI + GitHub API
         </footer>
 
     </div>
@@ -284,22 +348,42 @@
         }
 
         function showResult(data) {
-            document.getElementById('diagnosisText').innerText = data.diagnosis
-            document.getElementById('suggestionText').innerText = data.suggestion
-            document.getElementById('confidenceText').innerText = 
-                `AI Confidence: ${data.confidence}`
-
+            // Status badge
             const badge = document.getElementById('statusBadge')
             badge.innerText = data.status.toUpperCase()
             badge.className = 'status-badge ' + 
                 (data.status === 'failure' ? 'status-failure' : 'status-success')
+
+            // NEW: Pipeline meta info
+            document.getElementById('pipelineName').innerText = 
+                data.pipeline_name || 'Unknown'
+            
+            document.getElementById('branchName').innerText = 
+                data.branch || 'Unknown'
+            
+            document.getElementById('failedAt').innerText = 
+                data.failed_at ? new Date(data.failed_at).toLocaleString('en-GB') : 'Unknown'
+            
+            const urlEl = document.getElementById('pipelineUrl')
+            if (data.pipeline_url) {
+                urlEl.href = data.pipeline_url
+                urlEl.innerText = 'Open Pipeline'
+            } else {
+                urlEl.innerText = 'Not available'
+            }
+
+            // Diagnosis and suggestion
+            document.getElementById('diagnosisText').innerText = data.diagnosis
+            document.getElementById('suggestionText').innerText = data.suggestion
+            document.getElementById('confidenceText').innerText = 
+                'AI Confidence: ' + data.confidence
 
             document.getElementById('result').classList.add('visible')
         }
 
         function showError(msg) {
             const box = document.getElementById('errorBox')
-            box.innerText = '❌ ' + msg
+            box.innerText = 'Error: ' + msg
             box.classList.add('visible')
         }
 
@@ -319,7 +403,6 @@
             document.getElementById('errorBox').classList.remove('visible')
         }
 
-        // Allow Enter key to trigger diagnose
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') diagnose()
         })
