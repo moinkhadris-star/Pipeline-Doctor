@@ -231,7 +231,7 @@
             />
 
             <input 
-                type="number" 
+                type="text" 
                 id="runIdInput" 
                 placeholder="Run ID (optional - leave blank for latest failure)"
             />
@@ -255,7 +255,7 @@
             <div id="statusBadge" class="status-badge"></div>
 
             <!-- NEW: Pipeline Meta Information -->
-            <div class="meta-box">
+            <div class="meta-box" id="metaBox">
                 <div class="meta-item">
                     <div class="meta-label">Pipeline Name</div>
                     <div class="meta-value" id="pipelineName">-</div>
@@ -276,13 +276,13 @@
             </div>
 
             <!-- What went wrong -->
-            <div class="diagnosis-box">
+            <div class="diagnosis-box" id="diagnosisBox">
                 <div class="box-label">What went wrong</div>
                 <div class="box-content" id="diagnosisText"></div>
             </div>
 
             <!-- How to fix it -->
-            <div class="suggestion-box">
+            <div class="suggestion-box" id="suggestionBox">
                 <div class="box-label">How to fix it</div>
                 <div class="box-content" id="suggestionText"></div>
             </div>
@@ -347,40 +347,57 @@
             }
         }
 
+
         function showResult(data) {
+            const isFailure = data.status === 'failure'
+            const noFailures = data.status === 'no_failures'
+            const isSuccess = data.status === 'success'
+
             // Status badge
             const badge = document.getElementById('statusBadge')
             badge.innerText = data.status.toUpperCase()
-            badge.className = 'status-badge ' + 
-                (data.status === 'failure' ? 'status-failure' : 'status-success')
+            badge.className = 'status-badge ' + (isFailure ? 'status-failure' : 'status-success')
 
-            // NEW: Pipeline meta info
-            document.getElementById('pipelineName').innerText = 
-                data.pipeline_name || 'Unknown'
-            
-            document.getElementById('branchName').innerText = 
-                data.branch || 'Unknown'
-            
-            document.getElementById('failedAt').innerText = 
-                data.failed_at ? new Date(data.failed_at).toLocaleString('en-GB') : 'Unknown'
-            
-            const urlEl = document.getElementById('pipelineUrl')
-            if (data.pipeline_url) {
-                urlEl.href = data.pipeline_url
-                urlEl.innerText = 'Open Pipeline'
+            // FIX 1: Hide meta box when no failures found
+            const metaBox = document.getElementById('metaBox')
+            if (noFailures) {
+                metaBox.style.display = 'none'
             } else {
-                urlEl.innerText = 'Not available'
+                metaBox.style.display = 'grid'
+                document.getElementById('pipelineName').innerText = data.pipeline_name || 'Unknown'
+                document.getElementById('branchName').innerText = data.branch || 'Unknown'
+                document.getElementById('failedAt').innerText = 
+                    data.failed_at ? new Date(data.failed_at).toLocaleString('en-GB') : 'Unknown'
+                
+                const urlEl = document.getElementById('pipelineUrl')
+                if (data.pipeline_url) {
+                    urlEl.href = data.pipeline_url
+                    urlEl.innerText = 'Open Pipeline'
+                } else {
+                    urlEl.innerText = 'Not available'
+                }
             }
 
-            // Diagnosis and suggestion
-            document.getElementById('diagnosisText').innerText = data.diagnosis
-            document.getElementById('suggestionText').innerText = data.suggestion
-            document.getElementById('confidenceText').innerText = 
-                'AI Confidence: ' + data.confidence
+            // FIX 3: Hide diagnosis boxes on success or no failures
+            const diagnosisBox = document.getElementById('diagnosisBox')
+            const suggestionBox = document.getElementById('suggestionBox')
+            const confidenceEl = document.getElementById('confidenceText')
+
+            if (isSuccess || noFailures) {
+                diagnosisBox.style.display = 'none'
+                suggestionBox.style.display = 'none'
+                confidenceEl.style.display = 'none'
+            } else {
+                diagnosisBox.style.display = 'block'
+                suggestionBox.style.display = 'block'
+                confidenceEl.style.display = 'block'
+                document.getElementById('diagnosisText').innerText = data.diagnosis
+                document.getElementById('suggestionText').innerText = data.suggestion
+                confidenceEl.innerText = 'AI Confidence: ' + data.confidence
+            }
 
             document.getElementById('result').classList.add('visible')
         }
-
         function showError(msg) {
             const box = document.getElementById('errorBox')
             box.innerText = 'Error: ' + msg
