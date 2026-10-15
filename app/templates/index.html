@@ -163,7 +163,7 @@
 
         .box-content {
             color: #e0e0e0;
-            line-height: 1.6;
+            line-height: 1.8;
             white-space: pre-line;
         }
 
@@ -227,13 +227,13 @@
             <input 
                 type="text" 
                 id="repoInput" 
-                placeholder="Enter repo (e.g. username/repo-name)"
+                placeholder="Try: moinkhadris-star/git-learning-repo"
             />
 
             <input 
                 type="text" 
                 id="runIdInput" 
-                placeholder="Run ID (optional - leave blank for latest failure)"
+                placeholder="Run ID from the table in README or leave blank for latest failure"
             />
 
             <button onclick="diagnose()" id="diagnoseBtn">
@@ -392,7 +392,10 @@
                 suggestionBox.style.display = 'block'
                 confidenceEl.style.display = 'block'
                 document.getElementById('diagnosisText').innerText = data.diagnosis
-                document.getElementById('suggestionText').innerText = data.suggestion
+                const suggestion = data.suggestion
+                    .replace(/(\d+\.)\s/g, '\n$1 ')
+                    .trim()
+                document.getElementById('suggestionText').innerText = suggestion
                 confidenceEl.innerText = 'AI Confidence: ' + data.confidence
             }
 

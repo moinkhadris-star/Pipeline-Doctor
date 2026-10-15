@@ -46,9 +46,9 @@ Use these pre-built demo pipelines to test:
 
 | Demo | Repo | Run ID | Failure Type |
 |------|------|--------|--------------|
-| Missing package | moinkhadris-star/git-learning-repo |38734044392| Dependency error |
-| Syntax error | moinkhadris-star/git-learning-repo |38734247389| Python syntax |
-| Failed tests | moinkhadris-star/git-learning-repo |38734488293| Test failure |
+| Missing package | moinkhadris-star/github-actions-learning |38734044392| Dependency error |
+| Syntax error | moinkhadris-star/github-actions-learning |38734247389| Python syntax |
+| Failed tests | moinkhadris-star/github-actions-learning |38734488293| Test failure |
 
 Steps:
 1. Open the live demo link above
